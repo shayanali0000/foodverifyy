@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Discovery</title>
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+            --dark: #292F36;
+            --light: #F7FFF7;
+            --accent: #FFE66D;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .search-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-bar input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 30px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .search-bar input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2);
+        }
+
+        .search-bar button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 0 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .search-bar button:hover {
+            background-color: #ff5252;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .restaurant-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .restaurant-card {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .restaurant-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .restaurant-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+
+        .restaurant-info {
+            padding: 20px;
+        }
+
+        .restaurant-name {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .restaurant-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .restaurant-cuisine {
+            background-color: #e0f7fa;
+            color: #00838f;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        .restaurant-rating {
+            display: flex;
+            align-items: center;
+            color: var(--dark);
+        }
+
+        .star-icon {
+            color: var(--accent);
+            margin-right: 5px;
+        }
+
+        .reviews-section {
+            display: none;
+            margin-top: 2rem;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .reviews-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .back-button {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .reviews-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .review-item {
+            display: flex;
+            gap: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .review-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .review-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .review-content {
+            flex: 1;
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .reviewer-name {
+            font-weight: 600;
+        }
+
+        .review-rating {
+            color: var(--accent);
+            font-size: 0.9rem;
+        }
+
+        .review-text {
+            color: #555;
+            font-size: 0.9rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .review-preview-image {
+            width: 80px;
+            height: 60px;
+            border-radius: 4px;
+            object-fit: cover;
+            margin-top: 10px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background-color: white;
+            max-width: 800px;
+            margin: 30px auto;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .close-button {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #777;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .review-full {
+            margin-bottom: 30px;
+        }
+
+        .reviewer-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .reviewer-bio {
+            font-size: 0.9rem;
+            color: #777;
+        }
+
+        .review-full-text {
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        .review-media {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .media-item {
+            height: 150px;
+            border-radius: 4px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .media-item:hover {
+            transform: scale(1.02);
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 50px;
+            color: #777;
+        }
+
+        @media (max-width: 768px) {
+            .restaurant-list {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-content {
+                margin: 10px;
+            }
+            
+            .review-media {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .add-review-button {
+    background-color: var(--secondary);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-left: auto;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.submit-review-button {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+.submit-review-button:hover {
+    background-color: #ff5252;
+}
+
+.success-message {
+    color: green;
+    font-weight: 600;
+    margin-top: 10px;
+    display: none;
+}
+
+
+
+
+
+.image-preview {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.image-preview img {
+    width: 80px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+    </style>
+</head>
+<body>
+    <header>
+        <div class="search-container">
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search restaurants by name...">
+                <button id="searchButton">Search</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="mainContent">
+            <div class="restaurant-list" id="restaurantList">
+                <!-- Restaurant cards will be populated here -->
+            </div>
+        </div>
+
+
+    <div class="reviews-section" id="reviewsSection">
+    <div class="reviews-header">
+        <button class="back-button" id="backButton">
+            <span>←</span> Back to restaurants
+        </button>
+        <h2 id="restaurantReviewsTitle">Reviews</h2>
+        <button class="add-review-button" id="addReviewButton">+ Add Your Review</button>
+    </div>
+    <div class="reviews-list" id="reviewsList">
+        <!-- Reviews will be populated here -->
+    </div>
+</div>
+
+    <!-- Review Modal -->
+    <div class="modal" id="reviewModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalReviewTitle">Review Details</h3>
+                <button class="close-button" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body" id="modalReviewContent">
+                <!-- Full review will be populated here -->
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="addReviewModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title" id="addReviewModalTitle">Add Your Review</h3>
+            <button class="close-button" id="closeAddReviewModal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="reviewForm">
+                <div class="form-group">
+                    <label for="reviewerName">Your Name:</label>
+                    <input type="text" id="reviewerName" required>
+                </div>
+                <div class="form-group">
+                    <label for="reviewRating">Rating:</label>
+                    <select id="reviewRating" required>
+                        <option value="5">★★★★★</option>
+                        <option value="4">★★★★☆</option>
+                        <option value="3">★★★☆☆</option>
+                        <option value="2">★★☆☆☆</option>
+                        <option value="1">★☆☆☆☆</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="reviewText">Your Review:</label>
+                    <textarea id="reviewText" rows="4" required></textarea>
+                </div>
+              <div class="form-group">
+    <label for="reviewImages">Upload Images (optional):</label>
+    <input type="file" id="reviewImages" accept="image/*" multiple>
+    <div id="imagePreview" class="image-preview"></div>
+</div>
+                <div class="success-message" id="successMessage">Review added successfully!</div>
+                <button type="submit" class="submit-review-button">Submit Review</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+    <script>
+    // DOM elements
+    const imagePreview = document.getElementById('imagePreview');
+    const restaurantList = document.getElementById('restaurantList');
+    const searchInput = document.getElementById('searchInput');
+    const searchButton = document.getElementById('searchButton');
+    const mainContent = document.getElementById('mainContent');
+    const reviewsSection = document.getElementById('reviewsSection');
+    const reviewsList = document.getElementById('reviewsList');
+    const restaurantReviewsTitle = document.getElementById('restaurantReviewsTitle');
+    const backButton = document.getElementById('backButton');
+    const reviewModal = document.getElementById('reviewModal');
+    const modalReviewTitle = document.getElementById('modalReviewTitle');
+    const modalReviewContent = document.getElementById('modalReviewContent');
+    const closeModal = document.getElementById('closeModal');
+    const addReviewButton = document.getElementById('addReviewButton');
+    const addReviewModal = document.getElementById('addReviewModal');
+    const closeAddReviewModal = document.getElementById('closeAddReviewModal');
+    const reviewForm = document.getElementById('reviewForm');
+    const successMessage = document.getElementById('successMessage');
+
+    // Load saved restaurants from localStorage, or use default data
+    let restaurants = JSON.parse(localStorage.getItem('restaurants')) || [
+        {
+            id: 1,
+            name: "The Golden Fork",
+            cuisine: ["Italian", "Mediterranean"],
+            location: "Downtown",
+            rating: 4.5,
+            image: "https://placehold.co/600x400?text=The+Golden+Fork",
+            reviews: [
+                {
+                    id: 1,
+                    reviewer: "Alex Johnson",
+                    reviewText: "The pasta was absolutely divine! Perfect al dente texture with a rich, flavorful sauce. The tiramisu for dessert was the perfect ending to our meal. Service was impeccable - our waiter was very knowledgeable about the menu and wine pairings.",
+                    rating: 5,
+                    date: "2023-10-15",
+                    avatar: "https://placehold.co/100x100?text=Alex",
+                    images: [
+                        "https://placehold.co/800x600?text=Pasta+Dish",
+                        "https://placehold.co/800x600?text=Restaurant+Interior"
+                    ]
+                },
+                {
+                    id: 2,
+                    reviewer: "Sarah Miller",
+                    reviewText: "Good food but the service was slow. We waited nearly 30 minutes between courses. The gnocchi was excellent though - light and fluffy with a tasty gorgonzola sauce.",
+                    rating: 3,
+                    date: "2023-09-28",
+                    avatar: "https://placehold.co/100x100?text=Sarah",
+                    images: [
+                        "https://placehold.co/800x600?text=Gnocchi+Dish"
+                    ]
+                }
+            ]
+        },
+        {
+            id: 2,
+            name: "Spice Route",
+            cuisine: ["Indian", "Thai"],
+            location: "East District",
+            rating: 4.2,
+            image: "https://placehold.co/600x400?text=Spice+Route",
+            reviews: [
+                {
+                    id: 3,
+                    reviewer: "Rahul Patel",
+                    reviewText: "Authentic flavors that take you straight to Mumbai! The butter chicken was creamy and rich, perfectly spiced. The garlic naan was fresh and came piping hot. Only complaint is that the portions could be slightly larger for the price.",
+                    rating: 4,
+                    date: "2023-11-02",
+                    avatar: "https://placehold.co/100x100?text=Rahul",
+                    images: [
+                        "https://placehold.co/800x600?text=Butter+Chicken",
+                        "https://placehold.co/800x600?text=Garlic+Naan"
+                    ]
+                }
+            ]
+        },
+        {
+            id: 3,
+            name: "Burger Junction",
+            cuisine: ["American", "Burgers"],
+            location: "Westside Mall",
+            rating: 4.0,
+            image: "https://placehold.co/600x400?text=Burger+Junction",
+            reviews: [
+                {
+                    id: 4,
+                    reviewer: "Mike Thompson",
+                    reviewText: "Best burger I've had in years! The patty was juicy and cooked to perfection. The truffle fries are a must-try - crispy and flavorful. The craft beer selection pairs perfectly with the food.",
+                    rating: 5,
+                    date: "2023-10-22",
+                    avatar: "https://placehold.co/100x100?text=Mike",
+                    images: [
+                        "https://placehold.co/800x600?text=Burger+Meal",
+                        "https://placehold.co/800x600?text=Truffle+Fries"
+                    ]
+                },
+                {
+                    id: 5,
+                    reviewer: "Emily Chen",
+                    reviewText: "Decent burger joint but nothing extraordinary. The veggie burger option was a bit dry. The onion rings were the highlight of the meal - perfectly crisp with a light batter.",
+                    rating: 3,
+                    date: "2023-10-18",
+                    avatar: "https://placehold.co/100x100?text=Emily",
+                    images: [
+                        "https://placehold.co/800x600?text=Veggie+Burger",
+                        "https://placehold.co/800x600?text=Onion+Rings"
+                    ]
+                }
+            ]
+        },
+        {
+            id: 4,
+            name: "Sakura Sushi",
+            cuisine: ["Japanese", "Sushi"],
+            location: "Harbor Front",
+            rating: 4.7,
+            image: "https://placehold.co/600x400?text=Sakura+Sushi",
+            reviews: [
+                {
+                    id: 6,
+                    reviewer: "David Kim",
+                    reviewText: "Authentic sushi experience with the freshest fish. The chef's omakase selection was incredible - each piece was perfectly prepared. The atmosphere is serene and authentic. The premium sake pairing was worth every penny.",
+                    rating: 5,
+                    date: "2023-11-05",
+                    avatar: "https://placehold.co/100x100?text=David",
+                    images: [
+                        "https://placehold.co/800x600?text=Sushi+Platter",
+                        "https://placehold.co/800x600?text=Omakase+Selection"
+                    ]
+                },
+                {
+                    id: 7,
+                    reviewer: "Lisa Wong",
+                    reviewText: "The sushi was fresh and well-made but quite expensive. The miso soup was exceptionally good though - rich and comforting with just the right amount of dashi. The service was very attentive.",
+                    rating: 4,
+                    date: "2023-10-30",
+                    avatar: "https://placehold.co/100x100?text=Lisa",
+                    images: [
+                        "https://placehold.co/800x600?text=Miso+Soup",
+                        "https://placehold.co/800x600?text=Chef's+Counter"
+                    ]
+                }
+            ]
+        },
+        {
+            id: 5,
+            name: "Le Petite Bistro",
+            cuisine: ["French"],
+            location: "Riverside",
+            rating: 4.8,
+            image: "https://placehold.co/600x400?text=Le+Petite+Bistro",
+            reviews: [
+                {
+                    id: 8,
+                    reviewer: "Claire Dubois",
+                    reviewText: "A little piece of Paris in the city! The coq au vin was bursting with flavor, cooked to tender perfection. The chocolate soufflé was heavenly - light yet rich. The wine list is well curated with excellent French selections.",
+                    rating: 5,
+                    date: "2023-11-08",
+                    avatar: "https://placehold.co/100x100?text=Claire",
+                    images: [
+                        "https://placehold.co/800x600?text=Coq+au+Vin",
+                        "https://placehold.co/800x600?text=Dining+Room",
+                        "https://placehold.co/800x600?text=Chocolate+Soufflé"
+                    ]
+                }
+            ]
+        }
+    ];
+
+    let currentRestaurantId = null;
+
+    // Display all restaurants on page load
+    function displayRestaurants(filter = '') {
+        restaurantList.innerHTML = '';
+        const filtered = restaurants.filter(restaurant =>
+            restaurant.name.toLowerCase().includes(filter.toLowerCase())
+        );
+        if (filtered.length === 0) {
+            restaurantList.innerHTML = `
+                <div class="no-results">
+                    <p>No restaurants found matching "${filter}"</p>
+                </div>
+            `;
+            return;
+        }
+        filtered.forEach(restaurant => {
+            const card = document.createElement('div');
+            card.className = 'restaurant-card';
+            card.dataset.id = restaurant.id;
+            card.innerHTML = `
+                <img src="${restaurant.image}" alt="${restaurant.name} restaurant interior" class="restaurant-image">
+                <div class="restaurant-info">
+                    <h3 class="restaurant-name">${restaurant.name}</h3>
+                    <div class="restaurant-meta">
+                        <div>
+                            <span>${restaurant.location}</span>
+                        </div>
+                        <div class="restaurant-rating">
+                            <span class="star-icon">★</span>
+                            <span>${restaurant.rating}</span>
+                        </div>
+                    </div>
+                    <div>
+                        ${restaurant.cuisine.map(cuisine =>
+                            `<span class="restaurant-cuisine">${cuisine}</span>`
+                        ).join('')}
+                    </div>
+                </div>
+            `;
+            card.addEventListener('click', () => showReviews(restaurant.id));
+            restaurantList.appendChild(card);
+        });
+    }
+
+    // Show reviews for a specific restaurant
+    function showReviews(restaurantId) {
+        currentRestaurantId = restaurantId;
+        const restaurant = restaurants.find(r => r.id === restaurantId);
+        if (!restaurant) return;
+        mainContent.style.display = 'none';
+        reviewsSection.style.display = 'block';
+        restaurantReviewsTitle.textContent = `Customer Reviews for ${restaurant.name}`;
+        addReviewButton.style.display = 'block';
+        reviewsList.innerHTML = '';
+        restaurant.reviews.forEach(review => {
+            const reviewItem = document.createElement('div');
+            reviewItem.className = 'review-item';
+            reviewItem.dataset.id = review.id;
+            reviewItem.innerHTML = `
+                <img src="${review.avatar}" alt="Profile picture of ${review.reviewer}" class="review-avatar">
+                <div class="review-content">
+                    <div class="review-header">
+                        <span class="reviewer-name">${review.reviewer}</span>
+                        <span class="review-rating">${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</span>
+                    </div>
+                    <p class="review-text">${review.reviewText}</p>
+                    <div>
+                        ${review.images.slice(0, 1).map(image =>
+                            `<img src="${image}" alt="Food photo from ${review.reviewer}'s review" class="review-preview-image">`
+                        ).join('')}
+                    </div>
+                </div>
+            `;
+            reviewItem.addEventListener('click', () => openReviewModal(review, restaurant.name));
+            reviewsList.appendChild(reviewItem);
+        });
+    }
+
+    // Open modal with full review details
+    function openReviewModal(review, restaurantName) {
+        modalReviewTitle.textContent = `${review.reviewer}'s Review of ${restaurantName}`;
+        modalReviewContent.innerHTML = `
+            <div class="review-full">
+                <div class="reviewer-info">
+                    <img src="${review.avatar}" alt="Profile picture of ${review.reviewer}" class="review-avatar">
+                    <div>
+                        <h3>${review.reviewer}</h3>
+                        <div class="review-rating">${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</div>
+                        <div class="reviewer-bio">Reviewed on ${review.date}</div>
+                    </div>
+                </div>
+                <div class="review-full-text">
+                    <p>${review.reviewText}</p>
+                </div>
+                <div class="review-media">
+                    ${review.images.map(image =>
+                        `<img src="${image}" alt="Review photo from ${review.reviewer}" class="media-item">`
+                    ).join('')}
+                </div>
+            </div>
+        `;
+        reviewModal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Close modal
+    function closeReviewModal() {
+        reviewModal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    // Event listeners
+    searchButton.addEventListener('click', () => {
+        displayRestaurants(searchInput.value);
+    });
+
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            displayRestaurants(searchInput.value);
+        }
+    });
+
+    backButton.addEventListener('click', () => {
+        mainContent.style.display = 'block';
+        reviewsSection.style.display = 'none';
+        searchInput.value = '';
+        addReviewButton.style.display = 'none';
+    });
+
+    closeModal.addEventListener('click', closeReviewModal);
+
+    window.addEventListener('click', (e) => {
+        if (e.target === reviewModal) {
+            closeReviewModal();
+        }
+    });
+
+    // Add Review Modal
+    addReviewButton.addEventListener('click', () => {
+        addReviewModal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    });
+
+    closeAddReviewModal.addEventListener('click', () => {
+        addReviewModal.style.display = 'none';
+        document.body.style.overflow = '';
+    });
+
+    window.addEventListener('click', (e) => {
+        if (e.target === addReviewModal) {
+            addReviewModal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    });
+
+    // Image preview
+    document.getElementById('reviewImages').addEventListener('change', function(e) {
+        imagePreview.innerHTML = '';
+        const files = e.target.files;
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                alert('Please upload images smaller than 2MB.');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                imagePreview.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Review form submission
+    reviewForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const reviewerName = document.getElementById('reviewerName').value;
+        const reviewRating = parseInt(document.getElementById('reviewRating').value);
+        const reviewText = document.getElementById('reviewText').value;
+        const fileInput = document.getElementById('reviewImages');
+        const files = fileInput.files;
+
+        if (files.length > 0) {
+            const reviewImages = [];
+            let imagesLoaded = 0;
+            for (let i = 0; i < files.length; i++) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    reviewImages.push(e.target.result);
+                    imagesLoaded++;
+                    if (imagesLoaded === files.length) {
+                        addReview(reviewerName, reviewRating, reviewText, reviewImages);
+                    }
+                };
+                reader.readAsDataURL(files[i]);
+            }
+        } else {
+            addReview(reviewerName, reviewRating, reviewText, []);
+        }
+    });
+
+    function addReview(reviewerName, reviewRating, reviewText, reviewImages) {
+        const newReview = {
+            id: Date.now(),
+            reviewer: reviewerName,
+            reviewText: reviewText,
+            rating: reviewRating,
+            date: new Date().toISOString().split('T')[0],
+            avatar: `https://placehold.co/100x100?text=${reviewerName.charAt(0)}`,
+            images: reviewImages
+        };
+        const restaurant = restaurants.find(r => r.id === currentRestaurantId);
+        if (restaurant) {
+            restaurant.reviews.push(newReview);
+            showReviews(currentRestaurantId);
+            localStorage.setItem('restaurants', JSON.stringify(restaurants));
+            successMessage.style.display = 'block';
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 3000);
+        }
+        reviewForm.reset();
+        imagePreview.innerHTML = '';
+        document.getElementById('reviewImages').value = '';
+        addReviewModal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    // Initialize the page
+    displayRestaurants();
+
+
+
+    </script>
+</body>
+</html>
